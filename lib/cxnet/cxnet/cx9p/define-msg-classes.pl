@@ -38,46 +38,35 @@ sub readman {
     (my $base = $name) =~ s/^[TR]//;
     my $man = "$dir/man9/$base.9p";
 
+    # Open the manual page stream using 'man' program
+    open MAN, "man \"$man\" | col -b |" or die "$!\nUnable to open file: $man";
+
     my $line;
-    my $desc;
 
-    # First, try to examine the particular manual page on the subject
-    if (-e "$man") {
-	# Open the manual page stream using 'man' program
-	open MAN, "man \"$man\" | col -b |" or die "$!\nUnable to open file: $man";
+    # Search for the NAME section
+    while ($line !~ /^NAME/) {$line = <MAN> or last }
+    die "NAME section not found in the manual page $man" unless $line =~ /^NAME/;
 
-	# Search for the NAME section
-	while ($line !~ /^NAME/) {$line = <MAN> or last }
-	die "NAME section not found in the manual page $man" unless $line =~ /^NAME/;
-
-	# Parse the NAME section
-	while ($line = <MAN>) {
-	    last if $line =~ /^[A-Z]/;
-	    last if $desc and $line =~ /^\s*$/;
-	    if ($desc || $line =~ /^\s+$base\s+-+\s+(.*)$/) {
-		if (not $desc) {
-		    $desc = "\u$1";
-		} else {
-		    $desc = $desc."\n$1";
-		}
+    # Parse the NAME section
+    my $desc = "";
+    while ($line = <MAN>) {
+	last if $line =~ /^[A-Z]/;
+	last if $desc and $line =~ /^\s*$/;
+	if ($desc || $line =~ /^\s+$base\s+-+\s+(.*)$/) {
+	    if (not $desc) {
+		$desc = "\u$1";
+	    } else {
+		$desc = $desc."\n$1";
 	    }
 	}
-	die "Short description of $base not found in the NAME section of $man" unless $desc;
+    }
+    die "Short description of $base not found in the NAME section of $man" unless $desc;
 
-	# Search for the SYNOPSIS section
-	while ($line !~ /^SYNOPSIS/) { $line = <MAN> or last }
-	die "SYNOPSIS section not found in the manual page $man" unless $line =~ /^SYNOPSIS/;
-    # Else, look up the message type description in the introduction manual page
-    } else {
-	$man = "$dir/man9/0intro.9p";
-	open MAN, "man \"$man\" | col -b |" or die "$!\nUnable to open file: $man";
-	warn "No manual page for $name. Lookup $name description in the introduction page";
-	# Search for the MESSAGES section
-	while ($line !~ /^MESSAGES/) { $line = <MAN> or last }
-	die "MESSAGES section not found in the 9P introduction manual page $man" unless $line =~ /^MESSAGES/;
-    }	
+    # Search for the SYNOPSIS section
+    while ($line !~ /^SYNOPSIS/) { $line = <MAN> or last }
+    die "SYNOPSIS section not found in the manual page $man" unless $line =~ /^SYNOPSIS/;
 
-    # Parse the SYNOPSIS (MESSAGES) section
+    # Parse the SYNOPSIS section
     my @struct = ();
     while ($line = <MAN>) {
 	last if $line =~ /^[A-Z]/;
