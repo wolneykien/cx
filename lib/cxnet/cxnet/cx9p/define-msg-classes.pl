@@ -27,6 +27,8 @@ sub fieldtype {
 	}
     } elsif ($ftype eq "s") {
 	return "p9msgstr";
+    } elsif ($ftype eq "n") {
+	return "p9msgarray";
     }
 
     die "Unknown field type: $ftype";
@@ -84,7 +86,7 @@ sub readman {
 			$fname = "type";
 			$ftype = "c_ubyte";
 		    # A constant length field or a string
-		    } elsif ($field =~ /^([^\s[(*]+)\[(\d+|s)\]$/) {
+		    } elsif ($field =~ /^([^\s[(*]+)\[(\d+|s|n)\]$/) {
 			$fname = $1;
 			$ftype = fieldtype($fname, $2);
 		    # A variable length field with counter
