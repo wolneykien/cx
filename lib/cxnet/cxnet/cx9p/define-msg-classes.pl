@@ -1,11 +1,119 @@
 #!/usr/bin/perl
 
 use strict;
+use locale;
+
+# Look around
+(my $dir = $0) =~ s,/[^/]+$,,;
 
 my $line;
 # Search for enum
 while ($line !~ /^\s*enum/) { $line = <STDIN> or last; }
 while ($line !~ /{/) { $line = <STDIN> or last; }
+
+# Returns the field type for a given field name and a type notation
+sub fieldtype {
+    my ($fname, $ftype) = @_;
+
+    if ($ftype =~ /^\d+$/) {
+	if ($ftype eq "1") {
+	    return "c_ubyte";
+	} elsif ($ftype eq "2") {
+	    return "c_uint16";
+	} elsif ($ftype eq "4") {
+	    return "c_uint32";
+	} else {
+	    return "(c_ubyte * $ftype)";
+	}
+    } elsif ($ftype eq "s") {
+	return "p9msgstr";
+    }
+
+    die "Unknown field type: $ftype";
+}
+
+# Reads and parses the manual page for a given message type
+sub readman {
+    my ($name) = @_;
+    (my $base = $name) =~ s/^[TR]//;
+    my $man = "$dir/man9/$base.9p";
+
+    # Open the manual page stream using 'man' program
+    open MAN, "man \"$man\" | col -b |" or die "$!\nUnable to open file: $man";
+
+    my $line;
+
+    # Search for the NAME section
+    while ($line !~ /^NAME/) {$line = <MAN> or last }
+    die "NAME section not found in the manual page $man" unless $line =~ /^NAME/;
+
+    # Parse the NAME section
+    my $desc = "";
+    while ($line = <MAN>) {
+	last if $line =~ /^[A-Z]/;
+	last if $desc and $line =~ /^\s*$/;
+	if ($desc || $line =~ /^\s+$base\s+-+\s+(.*)$/) {
+	    if (not $desc) {
+		$desc = "\u$1";
+	    } else {
+		$desc = $desc."\n$1";
+	    }
+	}
+    }
+    die "Short description of $base not found in the NAME section of $man" unless $desc;
+
+    # Search for the SYNOPSIS section
+    while ($line !~ /^SYNOPSIS/) { $line = <MAN> or last }
+    die "SYNOPSIS section not found in the manual page $man" unless $line =~ /^SYNOPSIS/;
+
+    # Parse the SYNOPSIS section
+    my @struct = ();
+    while ($line = <MAN>) {
+	last if $line =~ /^[A-Z]/;
+	# Test for the structure definition
+	if ($line =~ /^\s+([^\s[(*]+(\[[^]]+\]|\*\([^)]+\))\s+)+([^\s\[\]\(\)*]+)\s*/) {
+	    last if @struct and $3 and $3 ne $name;
+	    if (not $3 && @struct || $3 eq $name) {
+		# Parse the structure definition
+		my @strdef = split(/\s+/, $line);
+		my ($fname, $ftype);
+		foreach my $field (@strdef) {
+		    next if not $field;
+		    # The message type field
+		    if ($field =~ /^([^\s[(*]+)$/) {
+			$fname = "type";
+			$ftype = "c_ubyte";
+		    # A constant length field or a string
+		    } elsif ($field =~ /^([^\s[(*]+)\[(\d+|s)\]$/) {
+			$fname = $1;
+			$ftype = fieldtype($fname, $2);
+		    # A variable length field with counter
+		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
+			$fname = $1;
+			not grep { $_->[1] =~ /MAX_MSG_SIZE/ } @struct or die "More than one variable length field: $fname";
+			grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
+			$ftype = "(c_ubyte * (MAX_MSG_SIZE))";
+		    # A variable length compound field
+		    } elsif ($field =~ /^([^\s[(*]+)\*\(([^\s[]+)\[([^\]]+)\]\)$/) {
+			$fname = $2;
+			not grep { $_->[1] =~ /MAX_MSG_SIZE/ } @struct or die "More than one variable length field: $fname";
+			grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
+			$ftype = "(".fieldtype($fname, $3)." * (MAX_MSG_SIZE))";
+		    # Error: unable to parse the field description
+		    } else {
+			die "Unable to parse the field description: $field";
+		    }
+		    push(@struct, [$fname, $ftype]);
+		    warn "$name: + $fname: $ftype";
+		}
+	    }
+	}
+    }
+
+    close(MAN);
+
+    return ($desc, \@struct);
+}
 
 # Read in enum items
 my %types = ();
@@ -15,10 +123,12 @@ while ($line = <STDIN>) {
 	my $base = $2;
 	$ord = $4 if $3;
 	my $type = { ord => $ord, name => $1, comment => $6 };
+	($type->{desc}, $type->{struct}) = readman($type->{name});
 	$types{$base} = { ord => $ord } unless $types{$base};
 	
 	$types{$base}->{T} = $type if $type->{name} =~ /^T/;
 	$types{$base}->{R} = $type if $type->{name} =~ /^R/;
+	warn "Add type '$type->{name}'";
     }
     last if $line =~ /}/;
     $ord++;
