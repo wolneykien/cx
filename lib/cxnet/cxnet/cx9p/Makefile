@@ -7,3 +7,6 @@ messages.py: messages.py.in fcall.h define-msg-classes.pl
 	echo >> messages.py
 	echo >> messages.py
 	cat fcall.h | ./define-msg-classes.pl >> messages.py
+
+clean:
+	rm -f messages.py
