@@ -120,17 +120,21 @@ sub readman {
 # Read in enum items
 my %types = ();
 my $ord = 0;
+my $Tmax = $ord;
 while ($line = <STDIN>) {
     if ($line =~ /^\s*([TR]([^\s=,]+))(\s*=\s*(\d+))?\s*,?\s*(\/\*\s*(.*)\s*\*\/)?$/) {
-	my $base = $2;
-	$ord = $4 if $3;
-	my $type = { ord => $ord, name => $1, comment => $6 };
-	($type->{desc}, $type->{struct}) = readman($type->{name});
-	$types{$base} = { ord => $ord } unless $types{$base};
-	
-	$types{$base}->{T} = $type if $type->{name} =~ /^T/;
-	$types{$base}->{R} = $type if $type->{name} =~ /^R/;
-	warn "Add type '$type->{name}'";
+	$Tmax = $ord unless $ord < $Tmax;
+	if ($1 ne "Tmax") {
+	    my $base = $2;
+	    $ord = $4 if $3;
+	    my $type = { ord => $ord, name => $1, comment => $6 };
+	    ($type->{desc}, $type->{struct}) = readman($type->{name});
+	    $types{$base} = { ord => $ord } unless $types{$base};
+
+	    $types{$base}->{T} = $type if $type->{name} =~ /^T/;
+	    $types{$base}->{R} = $type if $type->{name} =~ /^R/;
+	    warn "Add type '$type->{name}'";
+	}
     }
     last if $line =~ /}/;
     $ord++;
@@ -206,9 +210,9 @@ foreach my $type (values %types) {
 
 my $n = 0;
 my @tuple = ();
-while ($n <= 255) {
+while ($n < $Tmax) {
     if (exists $ords{$n}) {
-	if (@tuple and $ords{$n}->{name} =~ /^T/ and $n < 255 and exists $ords{$n + 1}) {
+	if (@tuple and $ords{$n}->{name} =~ /^T/ and $n < $Tmax and exists $ords{$n + 1}) {
 	    print_next_class(@tuple);
 	    @tuple = ($ords{$n});
 	} else {
@@ -219,7 +223,7 @@ while ($n <= 255) {
 	print_next_class(@tuple);
 	@tuple = ();
 	my $min = $n;
-	while ($n <= 255 and not exists $ords{$n}) { $n++; }
+	while ($n < $Tmax and not exists $ords{$n}) { $n++; }
 	print "p9msgclasses += tuple([None]*".($n - $min).") # Types for $min..".($n - 1)." are not defined\n";
     }
 }
