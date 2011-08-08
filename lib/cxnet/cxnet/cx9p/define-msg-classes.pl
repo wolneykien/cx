@@ -210,9 +210,9 @@ foreach my $type (values %types) {
 
 my $n = 0;
 my @tuple = ();
-while ($n < $Tmax) {
+while ($n <= 255) {
     if (exists $ords{$n}) {
-	if (@tuple and $ords{$n}->{name} =~ /^T/ and $n < $Tmax and exists $ords{$n + 1}) {
+	if (@tuple and $ords{$n}->{name} =~ /^T/ and $n < 255 and exists $ords{$n + 1}) {
 	    print_next_class(@tuple);
 	    @tuple = ($ords{$n});
 	} else {
@@ -223,7 +223,7 @@ while ($n < $Tmax) {
 	print_next_class(@tuple);
 	@tuple = ();
 	my $min = $n;
-	while ($n < $Tmax and not exists $ords{$n}) { $n++; }
+	while ($n <= 255 and not exists $ords{$n}) { $n++; }
 	print "p9msgclasses += tuple([None]*".($n - $min).") # Types for $min..".($n - 1)." are not defined\n";
     }
 }
