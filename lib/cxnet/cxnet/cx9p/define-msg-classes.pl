@@ -200,9 +200,9 @@ sub print_tr {
     print "    Comment: $type->{comment}\n" if $type->{comment};
     print "    \"\"\"\n";
     print "    _fields_ = [\n".
-	  "        (\"header\", p9msgheader),\n".
-	  "        ".join("        ", map { "(\"$_->[0]\", $_->[1]),\n" } @{$type->{struct}}).
-	  "    ]\n\n";
+	  "        (\"header\", p9msgheader),\n";
+    print "        ".join("        ", map { "(\"$_->[0]\", $_->[1]),\n" } @{$type->{struct}}) if @{$type->{struct}};
+    print "    ]\n\n";
 
     print "    def __init__ (self):\n";
     if (@{$type->{init}}) {
