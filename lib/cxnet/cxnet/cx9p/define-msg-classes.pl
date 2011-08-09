@@ -94,15 +94,25 @@ sub readman {
 		    # A variable length field with counter
 		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
 			$fname = $1;
-			not grep { $_->[1] =~ /MAX_MSG_SIZE/ } @struct or die "More than one variable length field: $fname";
-			grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
-			$ftype = "(c_ubyte * (MAX_MSG_SIZE))";
+			if ($struct[@struct - 1]->[0] eq "$2") {
+			    $struct[@struct - 1] = [$fname, "p9msgarray($struct[@struct - 1]->[1], c_ubyte)"];
+			    warn "$name: -$2, + $1: $struct[@struct - 1]->[1]";
+			    next;
+			} else {
+			    grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
+			    $ftype = "p9msgparray($2, c_ubyte)";
+			}
 		    # A variable length compound field
 		    } elsif ($field =~ /^([^\s[(*]+)\*\(([^\s[]+)\[([^\]]+)\]\)$/) {
 			$fname = $2;
-			not grep { $_->[1] =~ /MAX_MSG_SIZE/ } @struct or die "More than one variable length field: $fname";
-			grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
-			$ftype = "(".fieldtype($fname, $3)." * (MAX_MSG_SIZE))";
+			if ($struct[@struct - 1]->[0] eq "$1") {
+			    $struct[@struct - 1] = [$fname, "p9msgarray($struct[@struct - 1]->[1], ".fieldtype($fname, $3).")"];
+			    warn "$name: -$1, + $2: $struct[@struct - 1]->[1]";
+			    next;
+			} else {
+			    grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
+			    $ftype = "p9msgparray($1, ".fieldtype($fname, $3).")";
+			}
 		    # Error: unable to parse the field description
 		    } else {
 			die "Unable to parse the field description: $field";
