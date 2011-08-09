@@ -99,7 +99,7 @@ sub readman {
 	# Test for the structure definition
 	if ($line =~ /^\s+([^\s[(*]+(\[[^]]+\]|\*\([^)]+\))\s+)+([^\s\[\]\(\)*]+)\s*/) {
 	    last if @struct and $3 and $3 ne $name;
-	    if (not $3 && @struct || $3 eq $name) {
+	    if (!$3 && @struct || $3 eq $name) {
 		# Parse the structure definition
 		my @strdef = split(/\s+/, $line);
 		my ($fname, $ftype);
