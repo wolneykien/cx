@@ -113,7 +113,7 @@ sub readman {
 		    } elsif ($field =~ /^([^\s[(*]+)\[(\d+|s|n)\]$/) {
 			$fname = $1;
 			$ftype = fieldtype($fname, $2);
-		    # A variable length field with counter
+		    # A variable length byte field
 		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
 			$fname = $1;
 			if ($struct[@struct - 1]->[0] eq "$2") {
