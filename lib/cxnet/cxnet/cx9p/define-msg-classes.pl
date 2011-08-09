@@ -17,7 +17,11 @@ sub arraytype {
 
     if ($cfield->[1] =~ /^(c_ubyte|c_uint(\d+))$/) {
 	my $csize = $2 || "8";
-	return "$pref$csize($dfield->[1])";
+	if (wantarray) {
+	    return ("$pref$csize", $dfield->[1]);
+	} else {
+	    return "$pref$csize($dfield->[1])";
+	}
     } else {
 	die "Unsupported array counter type: $cfield->[0]";
     }
@@ -86,6 +90,7 @@ sub readman {
 
     # Parse the SYNOPSIS section
     my @struct = ();
+    my @init = ();
     while ($line = <MAN>) {
 	last if $line =~ /^[A-Z]/;
 	# Test for the structure definition
@@ -94,7 +99,7 @@ sub readman {
 	    if (!$3 && @struct || $3 eq $name) {
 		# Parse the structure definition
 		my @strdef = split(/\s+/, $line);
-		my ($fname, $ftype);
+		my ($fname, $ftype, $arraytype);
 		foreach my $field (@strdef) {
 		    next if not $field;
 		    # The message type field
@@ -104,28 +109,32 @@ sub readman {
 		    # A constant length field or a string
 		    } elsif ($field =~ /^([^\s[(*]+)\[(\d+|s|n)\]$/) {
 			$fname = $1;
-			$ftype = fieldtype($fname, $2);
+			($ftype, $arraytype) = fieldtype($fname, $2);
 		    # A variable length byte field
 		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
 			$fname = $1;
 			if ($struct[@struct - 1]->[0] eq "$2") {
-			    $struct[@struct - 1] = [$fname, arraytype("p9msgarray", $struct[@struct - 1], [$fname, "c_ubyte"])];
+			    ($ftype, $arraytype) = arraytype("p9msgarray", $struct[@struct - 1], [$fname, "c_ubyte"]);
+			    $struct[@struct - 1] = [$fname, $ftype];
 			    warn "$name: -$2, + $1: $struct[@struct - 1]->[1]";
+			    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 			    next;
 			} else {
 			    my @counters = grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
-			    $ftype = arraytype("p9msgparray", @counters[0], [$fname, "c_ubyte"]);
+			    ($ftype, $arraytype) = arraytype("p9msgparray", @counters[0], [$fname, "c_ubyte"]);
 			}
 		    # A variable length compound field
 		    } elsif ($field =~ /^([^\s[(*]+)\*\(([^\s[]+)\[([^\]]+)\]\)$/) {
 			$fname = $2;
 			if ($struct[@struct - 1]->[0] eq "$1") {
-			    $struct[@struct - 1] = [$fname, arraytype("p9msgarray", $struct[@struct - 1], [$fname, fieldtype($fname, $3)])];
+			    ($ftype, $arraytype) = arraytype("p9msgarray", $struct[@struct - 1], [$fname, fieldtype($fname, $3)]);
+			    $struct[@struct - 1] = [$fname, $ftype];
 			    warn "$name: -$1, + $2: $struct[@struct - 1]->[1]";
+			    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 			    next;
 			} else {
 			    my @counters = grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
-			    $ftype = arraytype("p9msgparray", @counters[0], [$fname, fieldtype($fname, $3)]);
+			    ($ftype, $arraytype) = arraytype("p9msgparray", @counters[0], [$fname, fieldtype($fname, $3)]);
 			}
 		    # Error: unable to parse the field description
 		    } else {
@@ -133,6 +142,7 @@ sub readman {
 		    }
 		    push(@struct, [$fname, $ftype]);
 		    warn "$name: + $fname: $ftype";
+		    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 		}
 	    }
 	}
@@ -140,7 +150,7 @@ sub readman {
 
     close(MAN);
 
-    return ($desc, \@struct);
+    return ($desc, \@struct, \@init);
 }
 
 # Read in enum items
@@ -154,7 +164,7 @@ while ($line = <STDIN>) {
 	    my $base = $2;
 	    $ord = $4 if $3;
 	    my $type = { ord => $ord, name => $1, comment => $6 };
-	    ($types{$base}->{desc}, $type->{struct}) = readman($type->{name});
+	    ($types{$base}->{desc}, $type->{struct}, $type->{init}) = readman($type->{name});
 	    $types{$base} = { ord => $ord } unless $types{$base};
 
 	    $types{$base}->{T} = $type if $type->{name} =~ /^T/;
@@ -192,7 +202,17 @@ sub print_tr {
     print "    _fields_ = [\n".
 	  "        (\"header\", p9msgheader),\n".
 	  "        ".join("        ", map { "(\"$_->[0]\", $_->[1]),\n" } @{$type->{struct}}).
-	  "    ]\n";
+	  "    ]\n\n";
+
+    print "    def __init__ (self):\n";
+    if (@{$type->{init}}) {
+	foreach my $finit (@{$type->{init}}) {
+	    my ($fname, $ftype, @params) = @$finit;
+	    print "        $fname = $ftype(".join(", ", @params).")\n";
+	}
+    } else {
+	print "        pass\n";
+    }
 }
 
 # Print out the class definitions
