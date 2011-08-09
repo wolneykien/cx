@@ -22,6 +22,8 @@ sub fieldtype {
 	    return "c_uint16";
 	} elsif ($ftype eq "4") {
 	    return "c_uint32";
+	} elsif ($ftype eq "13" and $fname =~ /qid/) {
+	    return "p9qid";
 	} else {
 	    return "(c_ubyte * $ftype)";
 	}
