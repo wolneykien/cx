@@ -7,6 +7,17 @@ use locale;
 (my $dir = $0) =~ s,/[^/]+$,,;
 
 my $line;
+
+# Search for the protocol version
+my $p9ver;
+while ($line = <STDIN>) {
+    if ($line =~ /^#define\s+VERSION9P\s+"([^"]+)"/) {
+	$p9ver = $1;
+	last;
+    }
+}
+$p9ver or die "Unable to find the protocol version";
+
 # Search for enum
 while ($line !~ /^\s*enum/) { $line = <STDIN> or last; }
 while ($line !~ /{/) { $line = <STDIN> or last; }
@@ -217,6 +228,12 @@ sub print_tr {
     }
 }
 
+# Print out the protocol version
+print "\"\"\"\n";
+print "The 9P version implemented\n";
+print "\"\"\"\n";
+print "VERSION9P = \"$p9ver\"\n\n";
+
 # Print out the class definitions
 my $n = 0;
 foreach my $base (sort { $types{$a}->{ord} <=> $types{$b}->{ord}  } keys %types) {
@@ -281,6 +298,8 @@ while ($n <= 255) {
 print_next_class(@tuple);
 
 print "\n";
+print "# Export some constants\n";
+print "__all__ += [\"VERSION9P\"]\n";
 print "# Export the generic message class\n";
 print "__all__ += [\"p9msg\"]\n";
 print "# Export all defined message types\n";
