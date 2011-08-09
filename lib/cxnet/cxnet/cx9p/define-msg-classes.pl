@@ -11,6 +11,18 @@ my $line;
 while ($line !~ /^\s*enum/) { $line = <STDIN> or last; }
 while ($line !~ /{/) { $line = <STDIN> or last; }
 
+# Returns the array type with the specified parameters
+sub arraytype {
+    my ($pref, $cfield, $dfield) = @_;
+
+    if ($cfield->[1] =~ /^(c_ubyte|c_uint(8|16|32))$/) {
+	my $csize = $2 || "8";
+	return "$pref$csize($dfield->[1])";
+    } else {
+	die "Unsupported array counter type: $cfield->[0]";
+    }
+}
+
 # Returns the field type for a given field name and a type notation
 sub fieldtype {
     my ($fname, $ftype) = @_;
@@ -30,8 +42,18 @@ sub fieldtype {
     } elsif ($ftype eq "s") {
 	return "p9msgstr";
     } elsif ($ftype eq "n") {
-	return "p9msgarray";
+	return arraytype("p9msgarray", ["n", "c_uint16"], [$fname, "c_ubyte"]);
+    }# Returns the array type with the specified parameters
+sub arraytype {
+    my ($pref, $cfield, $dfield) = @_;
+
+    if ($cfield->[1] =~ /^(c_ubyte|c_uint(8|16|32))$/) {
+	my $csize = $2 || "8";
+	return "$pref$csize($dfield->[1])";
+    } else {
+	die "Unsupported array counter type: $cfield->[0]";
     }
+}
 
     die "Unknown field type: $ftype";
 }
@@ -95,23 +117,23 @@ sub readman {
 		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
 			$fname = $1;
 			if ($struct[@struct - 1]->[0] eq "$2") {
-			    $struct[@struct - 1] = [$fname, "p9msgarray($struct[@struct - 1]->[1], c_ubyte)"];
+			    $struct[@struct - 1] = [$fname, arraytype("p9msgarray", $struct[@struct - 1], [$fname, "c_ubyte"])];
 			    warn "$name: -$2, + $1: $struct[@struct - 1]->[1]";
 			    next;
 			} else {
-			    grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
-			    $ftype = "p9msgparray($2, c_ubyte)";
+			    my @counters = grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
+			    $ftype = arraytype("p9msgparray", @counters[0], [$fname, "c_ubyte"]);
 			}
 		    # A variable length compound field
 		    } elsif ($field =~ /^([^\s[(*]+)\*\(([^\s[]+)\[([^\]]+)\]\)$/) {
 			$fname = $2;
 			if ($struct[@struct - 1]->[0] eq "$1") {
-			    $struct[@struct - 1] = [$fname, "p9msgarray($struct[@struct - 1]->[1], ".fieldtype($fname, $3).")"];
+			    $struct[@struct - 1] = [$fname, arraytype("p9msgarray", $struct[@struct - 1], [$fname, fieldtype($fname, $3)])];
 			    warn "$name: -$1, + $2: $struct[@struct - 1]->[1]";
 			    next;
 			} else {
-			    grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
-			    $ftype = "p9msgparray($1, ".fieldtype($fname, $3).")";
+			    my @counters = grep { $_->[0] eq "$1" } @struct or die "Counter field not found: $1";
+			    $ftype = arraytype("p9msgparray", @counters[0], [$fname, fieldtype($fname, $3)]);
 			}
 		    # Error: unable to parse the field description
 		    } else {
