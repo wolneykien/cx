@@ -279,3 +279,9 @@ while ($n <= 255) {
     }
 }
 print_next_class(@tuple);
+
+print "\n";
+print "# Export the generic message class\n";
+print "__all__ += [\"p9msg\"]\n";
+print "# Export all defined message types\n";
+print "__all__ += export_by_prefix(\"T\",globals()) + export_by_prefix(\"R\",globals())\n";
