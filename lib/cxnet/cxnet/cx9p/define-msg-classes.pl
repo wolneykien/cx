@@ -127,7 +127,7 @@ sub readman {
 			if ($struct[@struct - 1]->[0] eq "$2") {
 			    ($ftype, $arraytype) = arraytype("p9msgarray", $struct[@struct - 1], [$fname, "c_ubyte"]);
 			    $struct[@struct - 1] = [$fname, $ftype];
-			    warn "$name: -$2, + $1: $struct[@struct - 1]->[1]";
+#			    warn "$name: -$2, + $1: $struct[@struct - 1]->[1]";
 			    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 			    next;
 			} else {
@@ -140,7 +140,7 @@ sub readman {
 			if ($struct[@struct - 1]->[0] eq "$1") {
 			    ($ftype, $arraytype) = arraytype("p9msgarray", $struct[@struct - 1], [$fname, fieldtype($fname, $3)]);
 			    $struct[@struct - 1] = [$fname, $ftype];
-			    warn "$name: -$1, + $2: $struct[@struct - 1]->[1]";
+#			    warn "$name: -$1, + $2: $struct[@struct - 1]->[1]";
 			    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 			    next;
 			} else {
@@ -152,7 +152,7 @@ sub readman {
 			die "Unable to parse the field description: $field";
 		    }
 		    push(@struct, [$fname, $ftype]);
-		    warn "$name: + $fname: $ftype";
+#		    warn "$name: + $fname: $ftype";
 		    push(@init, [$fname, $ftype, $arraytype]) if $arraytype;
 		}
 	    }
