@@ -184,7 +184,10 @@ sub print_base {
           "    \"\"\"\n".
           "    9P '$base' message base class\n".
 	  "    ".join('\n    ', split(/\n/, $desc))."\n".
-          "    \"\"\"\n";
+          "    \"\"\"\n\n";
+
+    print "    def __init__ (self):\n".
+	  "        pass\n";
 }
 
 # Prints the T- or R-message class for a given type
@@ -204,14 +207,13 @@ sub print_tr {
     print "        ".join("        ", map { "(\"$_->[0]\", $_->[1]),\n" } @{$type->{struct}}) if @{$type->{struct}};
     print "    ]\n\n";
 
-    print "    def __init__ (self):\n";
+    print "    def __init__ (self):\n".
+	  "        super(p9${base}msgobj, self).__init__()\n";
     if (@{$type->{init}}) {
 	foreach my $finit (@{$type->{init}}) {
 	    my ($fname, $ftype, @params) = @$finit;
 	    print "        $fname = $ftype(".join(", ", @params).")\n";
 	}
-    } else {
-	print "        pass\n";
     }
 }
 
