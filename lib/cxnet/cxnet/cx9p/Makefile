@@ -2,7 +2,7 @@
 
 all: messages.py
 
-messages.py: messages.py.in fcall.h define-msg-classes.pl
+messages.py: messages.py.in fcall.h define-msg-classes.pl man9/*.9p
 	cat messages.py.in > messages.py
 	echo >> messages.py
 	echo >> messages.py
