@@ -164,7 +164,7 @@ while ($line = <STDIN>) {
 	    my $base = $2;
 	    $ord = $4 if $3;
 	    my $type = { ord => $ord, name => $1, comment => $6 };
-	    ($type->{desc}, $type->{struct}) = readman($type->{name});
+	    ($types{$base}->{desc}, $type->{struct}) = readman($type->{name});
 	    $types{$base} = { ord => $ord } unless $types{$base};
 
 	    $types{$base}->{T} = $type if $type->{name} =~ /^T/;
@@ -178,23 +178,25 @@ while ($line = <STDIN>) {
 
 # Prints the base class definition for a given type
 sub print_base {
-    my ($base) = @_;
+    my ($base, $desc) = @_;
 
     print "class p9${base}msgobj (p9msgobj):\n".
           "    \"\"\"\n".
           "    9P '$base' message base class\n".
+	  "    ".join('\n    ', split(/\n/, $desc))."\n".
           "    \"\"\"\n";
 }
 
 # Prints the T- or R-message class for a given type
 sub print_tr {
-    my ($type) = @_;
+    my ($type, $desc) = @_;
     (my $base = $type->{name}) =~ s/^[TR]//;
 
     print "class $type->{name} (Structure, p9${base}msgobj):\n".
           "    \"\"\"\n";
     print "    9P type $type->{ord} '$base' request (transmit) message class\n" if $type->{name} =~ /^T/;
     print "    9P type $type->{ord} '$base' reply (return) message class\n" if $type->{name} =~ /^R/;
+    print "    ".join('\n    ', split(/\n/, $desc))."\n";
     print "    Comment: $type->{comment}\n" if $type->{comment};
     print "    \"\"\"\n";
     print "    _fields_ = [\n".
@@ -206,15 +208,15 @@ sub print_tr {
 my $n = 0;
 foreach my $base (sort { $types{$a}->{ord} <=> $types{$b}->{ord}  } keys %types) {
     print "\n" if $n > 0;
-    print_base($base);
+    print_base($base, $types{$base}->{desc});
     if ($types{$base}->{T} || $types{$base}->{R}) {
 	if ($types{$base}->{T}) {
 	    print "\n";
-	    print_tr($types{$base}->{T});
+	    print_tr($types{$base}->{T}, $types{$base}->{desc});
 	}
 	if ($types{$base}->{R}) {
 	    print "\n";
-	    print_tr($types{$base}->{R});
+	    print_tr($types{$base}->{R}, $types{$base}->{desc});
 	}
     }
     $n++;
