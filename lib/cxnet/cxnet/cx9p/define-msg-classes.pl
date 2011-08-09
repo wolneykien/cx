@@ -229,9 +229,7 @@ sub print_tr {
 }
 
 # Print out the protocol version
-print "\"\"\"\n";
-print "The 9P version implemented\n";
-print "\"\"\"\n";
+print "# The 9P version implemented\n";
 print "VERSION9P = \"$p9ver\"\n\n";
 
 # Print out the class definitions
@@ -265,9 +263,7 @@ sub print_next_class {
 # Print out the message types tuple
 
 print "\n";
-print "\"\"\"\n";
-print "The tuple of all defined message classes\n";
-print "\"\"\"\n";
+print "# The tuple of all defined message classes\n";
 print "p9msgclasses = tuple()\n";
 
 my %ords = ();
