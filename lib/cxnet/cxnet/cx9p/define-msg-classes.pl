@@ -15,7 +15,7 @@ while ($line !~ /{/) { $line = <STDIN> or last; }
 sub arraytype {
     my ($pref, $cfield, $dfield) = @_;
 
-    if ($cfield->[1] =~ /^(c_ubyte|c_uint(8|16|32))$/) {
+    if ($cfield->[1] =~ /^(c_ubyte|c_uint(\d+))$/) {
 	my $csize = $2 || "8";
 	return "$pref$csize($dfield->[1])";
     } else {
@@ -34,6 +34,8 @@ sub fieldtype {
 	    return "c_uint16";
 	} elsif ($ftype eq "4") {
 	    return "c_uint32";
+	} elsif ($ftype eq "8") {
+	    return "c_uint64";
 	} elsif ($ftype eq "13" and $fname =~ /qid/) {
 	    return "p9qid";
 	} else {
