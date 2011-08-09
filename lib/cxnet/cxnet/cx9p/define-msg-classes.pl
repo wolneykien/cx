@@ -78,11 +78,13 @@ sub readman {
     while ($line = <MAN>) {
 	last if $line =~ /^[A-Z]/;
 	last if $desc and $line =~ /^\s*$/;
-	if ($desc || $line =~ /^\s+([^\s,-]+(,\s*[^\s,-]+)*)\s+-+\s+(.*)$/ && grep {$_ eq $base} split(/,\s*/, $1)) {
+	$line =~ s/^\s+//;
+	$line =~ s/\s+$//;
+	if ($desc || $line =~ /^([^\s,-]+(,\s*[^\s,-]+)*)\s+-+\s+(.*)$/ && grep {$_ eq $base} split(/,\s*/, $1)) {
 	    if (not $desc) {
-		$desc = "\u$1";
+		$desc = "\u$line";
 	    } else {
-		$desc = $desc."\n$1";
+		$desc = $desc."\n$line";
 	    }
 	}
     }
