@@ -201,6 +201,7 @@ sub print_tr {
     print "    \"\"\"\n";
     print "    _fields_ = [\n".
 	  "        (\"header\", p9msgheader),\n".
+	  "        ".join("        ", map { "(\"$_->[0]\", $_->[1]),\n" } @{$type->{struct}}).
 	  "    ]\n";
 }
 
