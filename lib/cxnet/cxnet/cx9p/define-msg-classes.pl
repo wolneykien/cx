@@ -45,19 +45,7 @@ sub fieldtype {
 	return "p9msgstr";
     } elsif ($ftype eq "n") {
 	return arraytype("p9msgarray", ["n", "c_uint16"], [$fname, "c_ubyte"]);
-    }# Returns the array type with the specified parameters
-sub arraytype {
-    my ($pref, $cfield, $dfield) = @_;
-
-    if ($cfield->[1] =~ /^(c_ubyte|c_uint(8|16|32))$/) {
-	my $csize = $2 || "8";
-	return "$pref$csize($dfield->[1])";
-    } else {
-	die "Unsupported array counter type: $cfield->[0]";
     }
-}
-
-    die "Unknown field type: $ftype";
 }
 
 # Reads and parses the manual page for a given message type
