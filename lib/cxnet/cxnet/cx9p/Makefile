@@ -1,12 +1,12 @@
 # Generate *.py templates from the 9P files
 
-all: messages.py
+all: messages.py.out
 
-messages.py: messages.py.in fcall.h define-msg-classes.pl man9/*.9p
-	cat messages.py.in > messages.py
-	echo >> messages.py
-	echo >> messages.py
-	cat fcall.h | ./define-msg-classes.pl >> messages.py
+messages.py.out: messages.py fcall.h define-msg-classes.pl man9/*.9p
+	cat messages.py > messages.py.out
+	echo >> messages.py.out
+	echo >> messages.py.out
+	cat fcall.h | ./define-msg-classes.pl >> messages.py.out
 
 clean:
-	rm -f messages.py
+	rm -f messages.py.out
