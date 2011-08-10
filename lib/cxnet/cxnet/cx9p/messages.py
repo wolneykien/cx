@@ -34,10 +34,9 @@ from ctypes import LittleEndianStructure as Structure, Union
 
 from cxnet.utils import hprint, hline
 
-"""
-The maximum message size is 8192 bytes
-"""
+# The maximum message size is 8192 bytes
 MAX_MSG_SIZE = 8192
+__all__ += ["MAX_MSG_SIZE"]
 
 class p9msgheaderobj (object):
     """
