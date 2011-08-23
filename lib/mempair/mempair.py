@@ -5,6 +5,9 @@ and stricture called a *car* and some tail, called a *cdr*, the length
 and structure of which are known only in runtime. The cdr, if it is
 defined, is always a pair itself.
 
+1. Parsing in general
+=====================
+
 A memory block is always parsed consequently, from the start to the
 end. The first *n* bytes of the block are accessd as the static head
 of the first pair *p* via ``p.car()`` method.  The reset of the block
@@ -17,6 +20,23 @@ next pair is determined in runtime on the base of values in the static
 head of the previous pair. In particular case there could be no next
 pair. In that case, the ``cdarclass()`` method should return
 ``type(None)``.
+
+2. Parsing arrays
+=================
+
+In some cases, a car should not be responsible for the rest of the
+block. That is a natural case for an element of an array: it may know
+nothing of the next element because the array's head is responsible
+for all of its elements. To implement that concept the «responsibility
+handover» mechanism can be unilized. If an object is not responsible
+for the class of the next pair's car the ``cdarclass()`` method simply
+should not be defined. In that case the system tries same method in
+the parent object with calculated index value as an argument. If it
+isn't defined in the parent, the parent's parent object is tried, if
+exists, and so on. The parent pointer and the index value are
+related objects: the parent of a pair is the pair that defines class
+of its car in a course of the described procedure while the index
+value is incremented for each defined pair starting with 0.
 """
 
 from ctypes import c_ubyte, pointer, POINTER, cast, sizeof
