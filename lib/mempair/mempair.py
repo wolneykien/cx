@@ -61,10 +61,19 @@ from ctypes import c_ubyte, pointer, POINTER, cast, sizeof
 
 class mempair (object):
 	"""
-	A memory pair
+	A memory pair.
 	"""
 
 	def __init__ (self, carclass, data, parent = None, index = 0):
+		"""
+		Sets up the pair object.
+
+		The ``carclass`` argument defines the class of the car
+		object and should be ``ctypes``-compatible. The
+		``data`` argument defines the memory block being
+		parsed. The other arguments are optional and reserved
+		for module internal use.
+		"""
 		if sizeof(data) >= sizeof(carclass):
 			self.parent = parent
 			self.index = index
@@ -83,6 +92,10 @@ class mempair (object):
 	def buf (self):
 		"""
 		Returns the (address, length) tuple of the pair memory buffer.
+
+		The values are determined by the ``data`` argument passed
+		on object's initialization and do not represent the actual
+		lenght of the buffer contents.
 		"""
 		return (byref(self.data), sizeof(self.data))
 
