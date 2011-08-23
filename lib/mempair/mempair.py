@@ -55,7 +55,7 @@ value is incremented for each defined pair starting with 0.
   the call is transferred to the parent object.
 """
 
-from ctypes import c_ubyte, pointer, POINTER, cast, sizeof
+from ctypes import c_ubyte, pointer, POINTER, cast, sizeof, byref
 
 # Memory pairs
 
