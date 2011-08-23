@@ -1,3 +1,23 @@
+"""
+The module for parsing a memory block constructing a list of pair
+objects. Each pair consists of a static head of predetermined length
+and stricture called a *car* and some tail, called a *cdr*, the length
+and structure of which are known only in runtime. The cdr, if it is
+defined, is always a pair itself.
+
+A memory block is always parsed consequently, from the start to the
+end. The first *n* bytes of the block are accessd as the static head
+of the first pair *p* via ``p.car()`` method.  The reset of the block
+is supposed to be the next pair which can be potentially get via
+``p.cdr()`` method. The length of that second pair is not defined save
+for its static head, i.e. ``p.cdr().car()``: to define its class
+(and therefore the structure) the ``p.car().cdarclass()`` method is
+consulted. With the use of ``cdarclass()`` method the structure of the
+next pair is determined in runtime on the base of values in the static
+head of the previous pair. In particular case there could be no next
+pair. In that case, the ``cdarclass()`` method should return
+``type(None)``.
+"""
 
 from ctypes import c_ubyte, pointer, POINTER, cast, sizeof
 
