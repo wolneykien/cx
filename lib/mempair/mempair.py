@@ -1,3 +1,5 @@
+# coding: utf-8
+
 """
 The module for parsing a memory block constructing a list of pair
 objects. Each pair consists of a static head of predetermined length
