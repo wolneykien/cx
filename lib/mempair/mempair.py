@@ -37,6 +37,22 @@ exists, and so on. The parent pointer and the index value are
 related objects: the parent of a pair is the pair that defines class
 of its car in a course of the described procedure while the index
 value is incremented for each defined pair starting with 0.
+
+3. Exceptions
+=============
+
+* If the length of the static head of a pair (car) exceeds the length
+  of the memory block being parsed an ``OverflowError`` is raised.
+
+* If the current set of values in the car object doesn't define a
+  proper state and the class of the next pair's car can not be
+  determined the ``TypeError`` or ``ValueError`` should be raised
+  in the ``cdarclass()`` method.
+
+* If the index value passed to the ``cdarclass()`` method exceeds
+  some limit then the ``IndexError`` should be raised. In that case,
+  as when no ``cdarclass()`` method is defined for a car object at all,
+  the call is transferred to the parent object.
 """
 
 from ctypes import c_ubyte, pointer, POINTER, cast, sizeof
