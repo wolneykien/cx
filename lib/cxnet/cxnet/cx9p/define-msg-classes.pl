@@ -223,7 +223,7 @@ sub print_cdarclass {
 	      "$indent"."        \"\"\"\n";
 	my @counters = ();
 	foreach my $type (@$tail) {
-	    $type->[1] =~ /\(([^*\s]+)\s*\*\s*(\S+)\)/ or die "Illegal complex array type notation: $type->[1]";
+	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*(\S+)\)$/ or die "Illegal complex array type notation: $type->[1]";
 	    my ($eltype, $counter) = ($1, $2);
 	    if (@counters) {
 		print "$indent"."        if (index - ".join(" - ", @counters).") < $counter:\n";
