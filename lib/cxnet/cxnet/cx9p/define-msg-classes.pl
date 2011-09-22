@@ -180,7 +180,7 @@ sub get_struct_tail {
 	} elsif ($scopy[0]->[1] =~ /^(p9msg\S+)$/) {
 	    push(@tail, [$scopy[0]->[0], "($1 * 1)"]); shift @scopy;
 	} else {
-	    push(@tail, [$scopy[0]->[0], "(self.tail * 1)"]);
+	    push(@tail, ["self.tail", "(self.tail * 1)"]);
 	    last;
 	}
     }
@@ -213,8 +213,13 @@ sub print_cdarclass {
     } elsif (@$tail > 1) {
 	print "$indent"."    def cdarclass (self, index = 0):\n".
 	      "$indent"."        \"\"\"\n".
-	      "$indent"."        Returns the type of the message tail number \`\`index\`\`:\n".
-	      "$indent"."          ".join(";\n$indent          ", map { "* \`\`$_->[0]\`\`" } @$tail).".\n".
+	      "$indent"."        Returns the type of the message tail number \`\`index\`\`:\n";
+	my @typelist = ();
+	foreach my $type (@$tail) {
+	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*\S+\)$/ or die "Illegal complex array type notation: $type->[1]";
+	    push (@typelist, $1);
+	}
+	print "$indent"."          ".join(";\n$indent          ", map { "* \`\`$_\`\`" } @typelist).".\n".
 	      "$indent"."        \"\"\"\n";
 	my @counters = ();
 	foreach my $type (@$tail) {
