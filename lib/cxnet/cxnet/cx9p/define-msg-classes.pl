@@ -217,9 +217,13 @@ sub print_cdarclass {
 	my @typelist = ();
 	foreach my $type (@$tail) {
 	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*\S+\)$/ or die "Illegal complex array type notation: $type->[1]";
-	    push (@typelist, $1);
+	    if ($type->[0] ne "self.tail") {
+		push (@typelist, "* $type->[0] \`\`\`$1\`\`\`");
+	    } else {
+		push (@typelist, "* \`\`\`$1\`\`\`");
+	    }
 	}
-	print "$indent"."          ".join(";\n$indent          ", map { "* \`\`$_\`\`" } @typelist).".\n".
+	print "$indent"."          ".join(";\n$indent          ", @typelist).".\n".
 	      "$indent"."        \"\"\"\n";
 	my @counters = ();
 	foreach my $type (@$tail) {
