@@ -108,7 +108,7 @@ sub readman {
 		    } elsif ($field =~ /^([^\s[(*]+)\[([^\]]+)\]$/) {
 			$fname = $1;
 			my @counters = grep { $_->[0] eq "$2" } @struct or die "Counter field not found: $2";
-			$ftype = fieldtype($fname, $2);
+			$ftype = "(c_ubyte * $2)";
 		    # A variable length compound field
 		    } elsif ($field =~ /^([^\s[(*]+)\*\(([^\s[]+)\[([^\]]+)\]\)$/) {
 			$fname = $2;
@@ -168,7 +168,8 @@ sub get_struct_tail {
     my @body = ();
     while (@scopy and
 	   $scopy[0]->[1] !~ /^\(p9msg[^*\s]+\s*\*\s*\S+\)$/ and
-	   $scopy[0]->[1] !~ /^p9msg\S+$/) {
+	   $scopy[0]->[1] !~ /^p9msg\S+$/ and
+	   $scopy[0]->[1] !~ /^\(c_\S+\s*\*\s*[A-Za-z_]+\S*\)$/) {
 	push(@body, shift @scopy);
     }
 
@@ -179,6 +180,8 @@ sub get_struct_tail {
 	    push(@tail, shift @scopy);
 	} elsif ($scopy[0]->[1] =~ /^(p9msg\S+)$/) {
 	    push(@tail, [$scopy[0]->[0], "($1 * 1)"]); shift @scopy;
+	} elsif ($scopy[0]->[1] =~ /^\(c_\S+\s*\*\s*([A-Za-z_]+\S*)\)$/) {
+	    push(@tail, shift @scopy);
 	} else {
 	    push(@tail, ["self.tail", "(self.tail * 1)"]);
 	    last;
@@ -208,8 +211,12 @@ sub print_cdarclass {
 	      "$indent"."        \"\"\"\n".
               "$indent"."        Returns the type of the message tail \`\`$tail->[0]->[0]\`\`\n".
               "$indent"."        \"\"\"\n";
-	$tail->[0]->[1] =~ /\(([^*\s]+)\s*\*\s*\S+\)/ or die "Illegal complex array type notation: $tail->[0]->[1]";
-	print "$indent"."        return $1\n";
+	$tail->[0]->[1] =~ /\(([^*\s]+)\s*\*\s*(\S+)\)/ or die "Illegal complex array type notation: $tail->[0]->[1]";
+	my ($eltype, $counter) = ($1, $2);
+	if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
+	    $eltype = "($eltype * $counter)";
+	}
+	print "$indent"."        return $eltype\n";
     } elsif (@$tail > 1) {
 	print "$indent"."    def cdarclass (self, index = 0):\n".
 	      "$indent"."        \"\"\"\n".
@@ -217,10 +224,14 @@ sub print_cdarclass {
 	my @typelist = ();
 	foreach my $type (@$tail) {
 	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*\S+\)$/ or die "Illegal complex array type notation: $type->[1]";
+	    my ($eltype, $counter) = ($1, $2);
+	    if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
+		$eltype = "($eltype * $counter)";
+	    }
 	    if ($type->[0] ne "self.tail") {
-		push (@typelist, "* $type->[0] \`\`\`$1\`\`\`");
+		push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\`");
 	    } else {
-		push (@typelist, "* \`\`\`$1\`\`\`");
+		push (@typelist, "* \`\`\`$eltype\`\`\`");
 	    }
 	}
 	print "$indent"."          ".join(";\n$indent          ", @typelist).".\n".
@@ -229,6 +240,10 @@ sub print_cdarclass {
 	foreach my $type (@$tail) {
 	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*(\S+)\)$/ or die "Illegal complex array type notation: $type->[1]";
 	    my ($eltype, $counter) = ($1, $2);
+	    if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
+		$eltype = "($eltype * $counter)";
+		$counter = "1";
+	    }
 	    if (@counters) {
 		print "$indent"."        if (index - ".join(" - ", @counters).") < $counter:\n";
 	    } else {
