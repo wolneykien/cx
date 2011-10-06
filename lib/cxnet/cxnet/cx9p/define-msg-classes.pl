@@ -167,8 +167,8 @@ sub get_struct_tail {
 
     my @body = ();
     while (@scopy and
-	   $scopy[0]->[1] !~ /^\(p9msg[^*\s]+\s*\*\s*\S+\)$/ and
-	   $scopy[0]->[1] !~ /^p9msg\S+$/ and
+	   $scopy[0]->[1] !~ /^\(p9[^*\s]+\s*\*\s*\S+\)$/ and
+	   $scopy[0]->[1] !~ /^p9\S+$/ and
 	   $scopy[0]->[1] !~ /^\(c_\S+\s*\*\s*[A-Za-z_]+\S*\)$/) {
 	push(@body, shift @scopy);
     }
@@ -176,9 +176,9 @@ sub get_struct_tail {
     my @tail = ();
     my @static_tail = ();
     while (@scopy) {
-	if ($scopy[0]->[1] =~ /^\(p9msg[^*\s]+\s*\*\s*\S+\)$/) {
+	if ($scopy[0]->[1] =~ /^\(p9[^*\s]+\s*\*\s*\S+\)$/) {
 	    push(@tail, shift @scopy);
-	} elsif ($scopy[0]->[1] =~ /^(p9msg\S+)$/) {
+	} elsif ($scopy[0]->[1] =~ /^(p9\S+)$/) {
 	    push(@tail, [$scopy[0]->[0], "($1 * 1)"]); shift @scopy;
 	} elsif ($scopy[0]->[1] =~ /^\(c_\S+\s*\*\s*([A-Za-z_]+\S*)\)$/) {
 	    push(@tail, shift @scopy);
