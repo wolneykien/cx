@@ -387,8 +387,10 @@ foreach my $type (values %types) {
 
 my $n = 0;
 my @tuple = ();
+my @names = ();
 while ($n <= 255) {
     if (exists $ords{$n}) {
+	push(@names, $ords{$n}->{name});
 	if (@tuple and $ords{$n}->{name} =~ /^T/ and $n < 255 and exists $ords{$n + 1}) {
 	    print_next_class(@tuple);
 	    @tuple = ($ords{$n});
@@ -410,4 +412,4 @@ print "\n";
 print "# Export some constants\n";
 print "__all__ += [\"VERSION9P\"]\n";
 print "# Export all defined message types\n";
-print "__all__ += export_by_prefix(\"T\",globals()) + export_by_prefix(\"R\",globals())\n";
+print "__all__ += [".join(", ", map { "\"$_\"" } @names)."]\n";
