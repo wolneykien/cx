@@ -215,6 +215,9 @@ sub print_cdarclass {
     my ($eltype, $counter) = ($1, $2);
     if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
 	$eltype = "($eltype * $counter)";
+	$counter = "1";
+    }
+    if ($counter eq "1" and @$tail == 1) {
 	print "$indent"."    def cdarclass (self):\n".
 	      "$indent"."        \"\"\"\n".
               "$indent"."        Returns the type of the message tail \`\`$tail->[0]->[0]\`\`\n".
