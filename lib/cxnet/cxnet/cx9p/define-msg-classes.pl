@@ -167,9 +167,10 @@ sub get_struct_tail {
 
     my @body = ();
     while (@scopy and
-	   $scopy[0]->[1] !~ /^\(p9[^*\s]+\s*\*\s*\S+\)$/ and
-	   $scopy[0]->[1] !~ /^p9\S+$/ and
-	   $scopy[0]->[1] !~ /^\(c_\S+\s*\*\s*[A-Za-z_]+\S*\)$/) {
+	   (@body == 0) ||
+	   ($scopy[0]->[1] !~ /^\(p9[^*\s]+\s*\*\s*\S+\)$/ and
+	    $scopy[0]->[1] !~ /^p9\S+$/ and
+	    $scopy[0]->[1] !~ /^\(c_\S+\s*\*\s*[A-Za-z_]+\S*\)$/)) {
 	push(@body, shift @scopy);
     }
 
