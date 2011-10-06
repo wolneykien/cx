@@ -61,6 +61,8 @@ class p9msg (Structure):
         else:
             raise ValueError("Unknown message type: %d" % (self.type))
 
+__all__ += ["p9msg"]
+
 class p9msgstring (Structure):
     """
     A 9P message string.
@@ -76,6 +78,8 @@ class p9msgstring (Structure):
         """
         return c_char * self.len
 
+__all__ += ["p9msgstring"]
+
 class p9msgarray (Structure):
     """
     A 9P message array.
@@ -90,6 +94,8 @@ class p9msgarray (Structure):
         Returns a byte array type of the corresponding length.
         """
         return c_ubyte * self.len
+    
+__all__ += ["p9msgarray"]
 
 class p9qid (Structure):
     """
@@ -105,3 +111,11 @@ class p9qid (Structure):
         ("version", c_uint32),
         ("path", c_uint64),
     ]
+
+__all__ += ["p9qid"]
+
+
+# Do not edit the following.
+# The following code is generated automatically from the
+# 9P manual pages and C header files.
+# See the `templates' branch for details.
