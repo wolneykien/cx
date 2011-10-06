@@ -206,30 +206,36 @@ sub print_cdarclass {
     my ($tail, $indent) = @_;
 
     print "\n";
-    if (@$tail == 1) {
+    if (@$tail == 0) {
+	return;
+    }
+
+    $tail->[0]->[1] =~ /\(([^*\s]+)\s*\*\s*(\S+)\)/ or die "Illegal complex array type notation: $tail->[0]->[1]";
+    my ($eltype, $counter) = ($1, $2);
+    if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
+	$eltype = "($eltype * $counter)";
 	print "$indent"."    def cdarclass (self):\n".
 	      "$indent"."        \"\"\"\n".
               "$indent"."        Returns the type of the message tail \`\`$tail->[0]->[0]\`\`\n".
               "$indent"."        \"\"\"\n";
-	$tail->[0]->[1] =~ /\(([^*\s]+)\s*\*\s*(\S+)\)/ or die "Illegal complex array type notation: $tail->[0]->[1]";
-	my ($eltype, $counter) = ($1, $2);
-	if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
-	    $eltype = "($eltype * $counter)";
-	}
 	print "$indent"."        return $eltype\n";
-    } elsif (@$tail > 1) {
+    } else {
 	print "$indent"."    def cdarclass (self, index = 0):\n".
 	      "$indent"."        \"\"\"\n".
 	      "$indent"."        Returns the type of the message tail number \`\`index\`\`:\n";
 	my @typelist = ();
 	foreach my $type (@$tail) {
-	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*\S+\)$/ or die "Illegal complex array type notation: $type->[1]";
+	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*(\S+)\)$/ or die "Illegal complex array type notation: $type->[1]";
 	    my ($eltype, $counter) = ($1, $2);
 	    if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
 		$eltype = "($eltype * $counter)";
 	    }
 	    if ($type->[0] ne "self.tail") {
-		push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\`");
+		if ($counter eq "1") {
+		    push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\`");
+		} else {
+		    push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\` * $counter");
+		}
 	    } else {
 		push (@typelist, "* \`\`\`$eltype\`\`\`");
 	    }
