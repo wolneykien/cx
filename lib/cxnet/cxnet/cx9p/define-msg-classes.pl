@@ -218,9 +218,13 @@ sub print_cdarclass {
     }
     if ($counter eq "1" and @$tail == 1) {
 	print "$indent"."    def cdarclass (self):\n".
-	      "$indent"."        \"\"\"\n".
-              "$indent"."        Returns the type of the message tail \`\`$tail->[0]->[0]\`\`\n".
-              "$indent"."        \"\"\"\n";
+	      "$indent"."        \"\"\"\n";
+	if ($counter eq "1") {
+	    print "$indent"."        Returns the \`\`$eltype\`\` as the type of the message tail \`\`$tail->[0]->[0]\`\`\n";
+	} else {
+	    print "$indent"."        Returns the \`\`$eltype\`\` * $counter as the type of the message tail \`\`$tail->[0]->[0]\`\`\n";
+	}
+        print "$indent"."        \"\"\"\n";
 	print "$indent"."        return $eltype\n";
     } else {
 	print "$indent"."    def cdarclass (self, index = 0):\n".
