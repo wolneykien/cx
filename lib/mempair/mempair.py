@@ -93,11 +93,20 @@ class mempair (object):
 
 	def buf (self):
 		"""
-		Returns the (address, length) tuple of the pair memory buffer.
+		Returns the (address, length) tuple of the pair occupied
+		memory buffer.
+		"""
+		(addr, size) = self.carbuf()
+		cdr = self.cdr()
+		if cdr:
+			(cdraddr, cdrsize) = cdr.buf()
+			size += cdrsize
+		return (addr, size)
 
-		The values are determined by the ``data`` argument passed
-		on object's initialization and do not represent the actual
-		lenght of the buffer contents.
+	def databuf (self):
+		"""
+		Returns the (address, length) tuple of the pair
+		available memory buffer.
 		"""
 		return (byref(self.data), sizeof(self.data))
 
