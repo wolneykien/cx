@@ -150,7 +150,13 @@ class mempair (object):
 			try:
 				return getattr (self.car(), name)
 			except AttributeError:
-				return getattr (self.cdr(), name)
+				cdr = self.cdr()
+				while cdr:
+					try:
+						return object.__getattribute__ (cdr.car(), name)
+					except AttributeError:
+						cdr = cdr.cdr()
+				raise AttributeError("No attribute '%s'" % name)
 
 	def __setattr__ (self, name, value):
 		try:
