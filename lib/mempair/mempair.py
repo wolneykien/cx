@@ -142,3 +142,32 @@ class mempair (object):
 			return type(self)(cdarclass, cdrbuf, parent, index)
 		else:
 			return None
+
+	def __getattr__ (self, name):
+		try:
+			return object.__getattribute__ (self, name)
+		except AttributeError:
+			try:
+				return getattr (self.car(), name)
+			except AttributeError:
+				return getattr (self.cdr(), name)
+
+	def __setattr__ (self, name, value):
+		try:
+			carobj = object.__getattribute__ (self, "carobj")
+		except AttributeError:
+			object.__setattr__ (self, name, value)
+			return
+		try:
+			object.__getattribute__ (carobj, name)
+			object.__setattr__ (carobj, name, value)
+		except AttributeError:
+			cdr = self.cdr()
+			while cdr:
+				try:
+					object.__getattribute__ (cdr.car(), name)
+					object.__setattr__ (cdr.car(), name, value)
+					return
+				except AttributeError:
+					cdr = cdr.cdr()
+			object.__setattr__ (self, name, value)
