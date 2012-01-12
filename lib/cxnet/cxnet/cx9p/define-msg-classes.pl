@@ -405,6 +405,7 @@ while ($n <= 255) {
 print_next_class(@tuple);
 
 print "\n";
+print "__all__ += [\"p9msgclasses\"]\n";
 print "# Export some constants\n";
 print "__all__ += [\"VERSION9P\"]\n";
 print "# Export all defined message types\n";
