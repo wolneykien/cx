@@ -1,0 +1,28 @@
+
+This branch descends from `9p' branch. Additional files are some 9P code and manual accompained with the generator files. The generator is used to output the up-to-date version of the messages.py file on the base of the 9P files and manual pages.
+
+To regenerate the files do the following steps
+
+# Check out this branch
+$ git checkout templates
+
+# Skip the modifications with previously generated material
+$ git merge -s ours -m "Pre-sync the templates" <9P-UPDATE-COMMIT>
+
+# Include the modifications to the template part of messages.py if any
+$ git merge 9p -m "Sync the templates" 9p
+
+# Re-generate the messages.py written to messages.py.out
+$ make
+
+# Check out the 9p branch
+$ git checkout 9p
+
+# Update the messages.py file
+$ mv messages.py.out messages.py
+
+# Commit the modifications of the generated material
+$ git add messages.py
+$ git commit -m <a comment>
+
+That last commit to the 9p branch should be skipped next time with git merge -s ours ... (step 1).
