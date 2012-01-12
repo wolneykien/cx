@@ -120,28 +120,53 @@ class mempair (object):
 		"""
 		Returns the pair that forms the tail of this pair.
 		"""
-		try:
-			cdarclass = self.car().cdarclass()
+		cdarclass = self.cdarclass()
+		if cdarclass is not type(None):
 			index = 0
 			parent = self
-		except AttributeError:
+		else:
 			parent = self.parent
 			index = self.index + 1
-			cdarclass = type(None)
 
 			while parent != None:
 				try:
-					cdarclass = parent.car().cdarclass(index)
-					break
-				except (AttributeError, TypeError, ValueError, IndexError):
-					index = parent.index  + 1
-					parent = parent.parent
+					cdarclass = parent.cdarclass (index)
+					if cdarclass is not type(None):
+						break
+				except IndexError:
+					pass
+				index = parent.index  + 1
+				parent = parent.parent
 		
 		if cdarclass != type(None):
 			cdrbuf = cast(cast(self.data, POINTER(c_ubyte * 1))[sizeof(self.carclass)], POINTER(c_ubyte * (sizeof(self.data) - sizeof(self.carclass)))).contents
 			return type(self)(cdarclass, cdrbuf, parent, index)
 		else:
 			return None
+
+	def cdarclass (self, key = 0):
+		try:
+			if isinstance (key, int) or isinstance (key, long):
+				pos = 0
+				for (fname, ftype, fcount) in self.car().cdrmap():
+					if pos < key:
+						pos = pos + fcount
+					else:
+						return ftype
+				raise IndexError ("Index out of bounds: %s" % key)
+			else:
+				for (fname, ftype, fcount) in self.car().cdrmap():
+					if key == fname:
+						return ftype
+		except AttributeError:
+			try:
+				if key:
+					return self.car().cdarclass (key)
+				else:
+					return self.car().cdarclass()
+			except (AttributeError, TypeError):
+				pass
+		return type(None)
 
 	def __getattr__ (self, name):
 		try:
@@ -150,12 +175,22 @@ class mempair (object):
 			try:
 				return getattr (self.car(), name)
 			except AttributeError:
-				cdr = self.cdr()
-				while cdr:
+				head = self.cdr()
+				try:
+					ftype = self.cdarclass (name)
+					if ftype is not type(None):
+						for (fname, ftype, fcount) in self.car().cdrmap():
+							if name == fname:
+								return head
+							else:
+								head = head.__skip (fcount)
+				except AttributeError:
+					pass
+				while head:
 					try:
-						return object.__getattribute__ (cdr.car(), name)
+						return object.__getattribute__ (head.car(), name)
 					except AttributeError:
-						cdr = cdr.cdr()
+						head = head.cdr()
 				raise AttributeError("No attribute '%s'" % name)
 
 	def __setattr__ (self, name, value):
@@ -177,3 +212,32 @@ class mempair (object):
 				except AttributeError:
 					cdr = cdr.cdr()
 			object.__setattr__ (self, name, value)
+
+	def __skip (self, count):
+		if not count:
+			return self
+		cdarclass = self.cdarclass()
+		if cdarclass is type(None):
+			# Good, a static length element
+			tail = cast(cast(self.data, POINTER(c_ubyte * 1))[sizeof(self.carclass) * count], POINTER(c_ubyte * (sizeof(self.data) - sizeof(self.carclass) * count))).contents
+			return type(self)(self.carclass, tail, self.parent, self.index + count)
+		else:
+			# A variable length element — walk the list :/
+			cdr = self
+			for i in range (count):
+				cdr = cdr.cdr()
+			return cdr
+
+	def __gethead (self):
+		head = self.parent.cdr()
+		pos = 0
+		for (fname, ftype, fcount) in self.parent.car().cdrmap():
+			if (pos + fcount) <= self.index:
+				pos = pos + fcount
+				head = head.__skip (fcount)
+			else:
+				break
+		return head
+
+	def __getitem__ (self, index):
+		return self.__gethead().__skip (index)
