@@ -146,71 +146,77 @@ class mempair (object):
 
 	def cdarclass (self, key = 0):
 		try:
-			if isinstance (key, int) or isinstance (key, long):
-				pos = 0
-				for (fname, ftype, fcount) in self.car().cdrmap():
-					if pos < key:
-						pos = pos + fcount
-					else:
-						return ftype
-				raise IndexError ("Index out of bounds: %s" % key)
-			else:
-				for (fname, ftype, fcount) in self.car().cdrmap():
-					if key == fname:
-						return ftype
-		except AttributeError:
-			try:
-				if key:
-					return self.car().cdarclass (key)
+			pos = 0
+			for (fname, ftype, fcount) in self.car().cdrmap():
+				if pos < key:
+					pos = pos + fcount
 				else:
+					return ftype
+				raise IndexError ("Index out of bounds: %s" % key)
+		except AttributeError:
+			if key:
+				try:
+					return self.car().cdarclass (key)
+				except (TypeError, AttributeError):
+					raise IndexError ("Index out of bounds: %s" % key)
+			else:
+				try:
 					return self.car().cdarclass()
-			except (AttributeError, TypeError):
-				pass
+				except AttributeError:
+					pass
+
 		return type(None)
 
 	def __getattr__ (self, name):
 		try:
-			return object.__getattribute__ (self, name)
+			return getattr (self.car(), name)
 		except AttributeError:
-			try:
-				return getattr (self.car(), name)
-			except AttributeError:
-				head = self.cdr()
+			tail = self.cdr()
+			if tail:
 				try:
-					ftype = self.cdarclass (name)
-					if ftype is not type(None):
-						for (fname, ftype, fcount) in self.car().cdrmap():
-							if name == fname:
-								return head
-							else:
-								head = head.__skip (fcount)
+					for (fname, ftype, fcount) in self.car().cdrmap():
+						if name == fname:
+							return tail
+						elif fname == "_tail":
+							return getattr (tail, name)
+						else:
+							tail = tail.__skip (fcount)
 				except AttributeError:
-					pass
-				while head:
 					try:
-						return object.__getattribute__ (head.car(), name)
-					except AttributeError:
-						head = head.cdr()
-				raise AttributeError("No attribute '%s'" % name)
+						if self.cdarclass (1):
+							pass
+					except IndexError:
+						return getattr (tail, name)
+
+			raise AttributeError ("'%s' object has no attribute '%s'" % (self.carclass, name))
 
 	def __setattr__ (self, name, value):
 		try:
 			carobj = object.__getattribute__ (self, "carobj")
 		except AttributeError:
+			# Object is not initialized yet
 			object.__setattr__ (self, name, value)
 			return
 		try:
 			object.__getattribute__ (carobj, name)
 			object.__setattr__ (carobj, name, value)
 		except AttributeError:
-			cdr = self.cdr()
-			while cdr:
+			tail = self.cdr()
+			if tail:
 				try:
-					object.__getattribute__ (cdr.car(), name)
-					object.__setattr__ (cdr.car(), name, value)
-					return
+					for (fname, ftype, fcount) in self.car().cdrmap():
+						if fname == "_tail":
+							setattr (tail, name, value)
+							return
+						else:
+							tail = tail.__skip (fcount)
 				except AttributeError:
-					cdr = cdr.cdr()
+					try:
+						if self.cdarclass (1):
+							pass
+					except IndexError:
+						setattr (tail, name, value)
+						return
 			object.__setattr__ (self, name, value)
 
 	def __skip (self, count):
@@ -232,12 +238,24 @@ class mempair (object):
 		head = self.parent.cdr()
 		pos = 0
 		for (fname, ftype, fcount) in self.parent.car().cdrmap():
+			hlen = fcount
 			if (pos + fcount) <= self.index:
 				pos = pos + fcount
 				head = head.__skip (fcount)
 			else:
 				break
-		return head
+		return (head, hlen)
+
+	def __nonzero__ (self):
+		try:
+			return self.__len__()
+		except AttributeError:
+			return 1
+
+	def __len__ (self):
+		(head, hlen) = self.__gethead()
+		return hlen
 
 	def __getitem__ (self, index):
-		return self.__gethead().__skip (index)
+		(head, hlen) = self.__gethead()
+		return head.__skip (index)
