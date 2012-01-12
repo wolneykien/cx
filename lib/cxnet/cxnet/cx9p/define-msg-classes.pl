@@ -277,6 +277,7 @@ sub print_tr {
     print "$indent"."    ".join('\n    ', split(/\n/, $desc))."\n";
     print "$indent"."    Comment: $type->{comment}\n" if $type->{comment};
     print "$indent"."    \"\"\"\n";
+    print "$indent"."    _type = $type->{ord}\n" if $type->{ord};
     print_struct ($body, $indent) if @$body;
     if (@$static_tail) {
 	print "\n";
