@@ -183,7 +183,7 @@ sub get_struct_tail {
 	} elsif ($scopy[0]->[1] =~ /^\(c_\S+\s*\*\s*([A-Za-z_]+\S*)\)$/) {
 	    push(@tail, shift @scopy);
 	} else {
-	    push(@tail, ["self.tail", "(self.tail * 1)"]);
+	    push(@tail, ["_tail", "(self.tail * 1)"]);
 	    last;
 	}
     }
@@ -217,19 +217,17 @@ sub print_cdarclass {
 	$counter = "1";
     }
     if ($counter eq "1" and @$tail == 1) {
-	print "$indent"."    def cdarclass (self):\n".
+	print "$indent"."    def cdrmap (self):\n".
 	      "$indent"."        \"\"\"\n";
 	if ($counter eq "1") {
 	    print "$indent"."        Returns the \`\`$eltype\`\` as the type of the message tail \`\`$tail->[0]->[0]\`\`\n";
-	} else {
-	    print "$indent"."        Returns the \`\`$eltype\`\` * $counter as the type of the message tail \`\`$tail->[0]->[0]\`\`\n";
 	}
         print "$indent"."        \"\"\"\n";
-	print "$indent"."        return $eltype\n";
+	print "$indent"."        return [(\"$tail->[0]->[0]\", $eltype, 1)]\n";
     } else {
-	print "$indent"."    def cdarclass (self, index = 0):\n".
+	print "$indent"."    def cdrmap (self):\n".
 	      "$indent"."        \"\"\"\n".
-	      "$indent"."        Returns the type of the message tail number \`\`index\`\`:\n";
+	      "$indent"."        Returns the map of the message tail:\n";
 	my @typelist = ();
 	foreach my $type (@$tail) {
 	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*(\S+)\)$/ or die "Illegal complex array type notation: $type->[1]";
@@ -237,18 +235,15 @@ sub print_cdarclass {
 	    if ($eltype =~ /^c_\S+$/ and $counter =~ /^[A-Za-z_]+\S*$/) {
 		$eltype = "($eltype * $counter)";
 	    }
-	    if ($type->[0] ne "self.tail") {
-		if ($counter eq "1") {
-		    push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\`");
-		} else {
-		    push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\` * $counter");
-		}
+	    if ($counter eq "1") {
+		push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\`");
 	    } else {
-		push (@typelist, "* \`\`\`$eltype\`\`\`");
+		push (@typelist, "* $type->[0] \`\`\`$eltype\`\`\` * $counter");
 	    }
 	}
 	print "$indent"."          ".join(";\n$indent          ", @typelist).".\n".
 	      "$indent"."        \"\"\"\n";
+	print "$indent"."        return [";
 	my @counters = ();
 	foreach my $type (@$tail) {
 	    $type->[1] =~ /^\(([^*\s]+)\s*\*\s*(\S+)\)$/ or die "Illegal complex array type notation: $type->[1]";
@@ -258,14 +253,12 @@ sub print_cdarclass {
 		$counter = "1";
 	    }
 	    if (@counters) {
-		print "$indent"."        if (index - ".join(" - ", @counters).") < $counter:\n";
-	    } else {
-		print "$indent"."        if index < $counter:\n";
+		print ", ";
 	    }
-	    print "$indent"."            return $eltype\n";
+	    print "$indent"."(\"$type->[0]\", $eltype, $counter)";
 	    push(@counters, $counter);
 	}
-	print "$indent"."        raise IndexError(\"Array index out of bounds\")\n";
+	print "]\n";
     }
 }
 
